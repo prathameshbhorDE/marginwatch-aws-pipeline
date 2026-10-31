@@ -1,0 +1,201 @@
+cpty_id,short_name,legal_name,country,group_name,agreements
+CP001,GS INTL,Goldman Sachs International,GB,Goldman Sachs,ISDA
+CP002,GS LLC,Goldman Sachs & Co. LLC,US,Goldman Sachs,ISDA|GMRA
+CP003,GS BE,Goldman Sachs Bank Europe SE,DE,Goldman Sachs,ISDA
+CP004,GS USA,Goldman Sachs Bank USA,US,Goldman Sachs,ISDA|GMRA
+CP005,JPM PLC,J.P. Morgan Securities plc,GB,JPMorgan Chase,ISDA
+CP006,JPM NA,"JPMorgan Chase Bank, N.A.",US,JPMorgan Chase,ISDA
+CP007,JPM SE,J.P. Morgan SE,DE,JPMorgan Chase,ISDA|GMRA
+CP008,JPM LLC,J.P. Morgan Securities LLC,US,JPMorgan Chase,ISDA
+CP009,MS INTL,Morgan Stanley & Co. International plc,GB,Morgan Stanley,ISDA|GMRA
+CP010,MS LLC,Morgan Stanley & Co. LLC,US,Morgan Stanley,ISDA
+CP011,MS SE,Morgan Stanley Europe SE,DE,Morgan Stanley,ISDA|GMRA
+CP012,MS NA,"Morgan Stanley Bank, N.A.",US,Morgan Stanley,ISDA|GMRA
+CP013,CITI GML,Citigroup Global Markets Limited,GB,Citigroup,ISDA
+CP014,CITI GMI,Citigroup Global Markets Inc.,US,Citigroup,ISDA
+CP015,CITI NA,"Citibank, N.A.",US,Citigroup,ISDA|GMRA
+CP016,CITI EU,Citigroup Global Markets Europe AG,DE,Citigroup,ISDA|GMRA
+CP017,BOFA NA,"Bank of America, N.A.",US,Bank of America,ISDA
+CP018,BOFA SEC,"BofA Securities, Inc.",US,Bank of America,ISDA
+CP019,MLI,Merrill Lynch International,GB,Bank of America,ISDA
+CP020,BOFA EU,BofA Securities Europe SA,FR,Bank of America,ISDA
+CP021,WF NA,"Wells Fargo Bank, N.A.",US,Wells Fargo,ISDA
+CP022,WF SEC,"Wells Fargo Securities, LLC",US,Wells Fargo,ISDA|GMRA
+CP023,JEF LLC,Jefferies LLC,US,Jefferies,ISDA
+CP024,JEF INTL,Jefferies International Limited,GB,Jefferies,ISDA|GMRA
+CP025,BNYM,The Bank of New York Mellon,US,BNY,ISDA|GMRA
+CP026,SSBT,State Street Bank and Trust Company,US,State Street,ISDA|GMRA
+CP027,NTRS,The Northern Trust Company,US,Northern Trust,ISDA
+CP028,CANTOR,Cantor Fitzgerald & Co.,US,Cantor Fitzgerald,ISDA
+CP029,STONEX,StoneX Financial Inc.,US,StoneX,ISDA|GMRA
+CP030,MIZ USA,Mizuho Securities USA LLC,US,Mizuho,ISDA
+CP031,BARC PLC,Barclays Bank PLC,GB,Barclays,ISDA
+CP032,BARC IE,Barclays Bank Ireland PLC,IE,Barclays,ISDA
+CP033,BARC INC,Barclays Capital Inc.,US,Barclays,ISDA
+CP034,HSBC PLC,HSBC Bank plc,GB,HSBC,ISDA|GMRA
+CP035,HSBC USA,"HSBC Bank USA, N.A.",US,HSBC,ISDA|GMRA
+CP036,HSBC CE,HSBC Continental Europe,FR,HSBC,ISDA|GMRA
+CP037,HSBC HK,The Hongkong and Shanghai Banking Corporation Limited,HK,HSBC,ISDA
+CP038,LLOYDS CM,Lloyds Bank Corporate Markets plc,GB,Lloyds,ISDA
+CP039,NWM PLC,NatWest Markets Plc,GB,NatWest,ISDA
+CP040,NWM NV,NatWest Markets N.V.,NL,NatWest,ISDA
+CP041,SCB,Standard Chartered Bank,GB,Standard Chartered,ISDA
+CP042,SAN UK,Santander UK plc,GB,Santander,ISDA|GMRA
+CP043,SAN SA,"Banco Santander, S.A.",ES,Santander,ISDA
+CP044,DB AG,Deutsche Bank AG,DE,Deutsche Bank,ISDA
+CP045,DB LDN,"Deutsche Bank AG, London Branch",GB,Deutsche Bank,ISDA|GMRA
+CP046,DB SEC,Deutsche Bank Securities Inc.,US,Deutsche Bank,ISDA
+CP047,CBK,Commerzbank AG,DE,Commerzbank,ISDA
+CP048,DZ,DZ BANK AG,DE,DZ Bank,ISDA
+CP049,LBBW,Landesbank Baden-Württemberg,DE,LBBW,ISDA
+CP050,BAYLB,Bayerische Landesbank,DE,BayernLB,ISDA|GMRA
+CP051,UBS AG,UBS AG,CH,UBS,ISDA
+CP052,UBS LDN,"UBS AG, London Branch",GB,UBS,ISDA|GMRA
+CP053,UBS EU,UBS Europe SE,DE,UBS,ISDA
+CP054,UBS SEC,UBS Securities LLC,US,UBS,ISDA
+CP055,BNPP,BNP Paribas,FR,BNP Paribas,ISDA|GMRA
+CP056,BNPP SEC,BNP Paribas Securities Corp.,US,BNP Paribas,ISDA
+CP057,SOCGEN,Société Générale,FR,Societe Generale,ISDA|GMRA
+CP058,SG US,"SG Americas Securities, LLC",US,Societe Generale,ISDA
+CP059,SG INTL,Société Générale International Limited,GB,Societe Generale,ISDA
+CP060,CACIB,Crédit Agricole Corporate and Investment Bank,FR,Credit Agricole,ISDA
+CP061,NATIXIS,Natixis,FR,BPCE,ISDA
+CP062,BBVA,"Banco Bilbao Vizcaya Argentaria, S.A.",ES,BBVA,ISDA
+CP063,CAIXA,"CaixaBank, S.A.",ES,CaixaBank,ISDA
+CP064,ISP,Intesa Sanpaolo S.p.A.,IT,Intesa Sanpaolo,ISDA
+CP065,UCG,UniCredit S.p.A.,IT,UniCredit,ISDA
+CP066,UCG DE,UniCredit Bank GmbH,DE,UniCredit,ISDA
+CP067,ING,ING Bank N.V.,NL,ING,ISDA
+CP068,ABN,ABN AMRO Bank N.V.,NL,ABN AMRO,ISDA
+CP069,RABO,Coöperatieve Rabobank U.A.,NL,Rabobank,ISDA
+CP070,NORDEA,Nordea Bank Abp,FI,Nordea,ISDA
+CP071,SEB,Skandinaviska Enskilda Banken AB (publ),SE,SEB,ISDA|GMRA
+CP072,SHB,Svenska Handelsbanken AB (publ),SE,Handelsbanken,ISDA
+CP073,DANSKE,Danske Bank A/S,DK,Danske Bank,ISDA
+CP074,DNB,DNB Bank ASA,NO,DNB,ISDA
+CP075,KBC,KBC Bank NV,BE,KBC,ISDA
+CP076,SWED,Swedbank AB (publ),SE,Swedbank,ISDA|GMRA
+CP077,ERSTE,Erste Group Bank AG,AT,Erste,ISDA
+CP078,RBI,Raiffeisen Bank International AG,AT,Raiffeisen,ISDA
+CP079,SABADELL,"Banco de Sabadell, S.A.",ES,Sabadell,ISDA|GMRA
+CP080,ZKB,Zürcher Kantonalbank,CH,ZKB,ISDA
+CP081,BJB,Bank Julius Bär & Co. AG,CH,Julius Baer,ISDA|GMRA
+CP082,AIB,"Allied Irish Banks, p.l.c.",IE,AIB,ISDA|GMRA
+CP083,BOI,Bank of Ireland,IE,Bank of Ireland,ISDA|GMRA
+CP084,INVESTEC,Investec Bank plc,GB,Investec,ISDA
+CP085,NOM INTL,Nomura International plc,GB,Nomura,ISDA|GMRA
+CP086,NOM SII,"Nomura Securities International, Inc.",US,Nomura,ISDA|GMRA
+CP087,MIZ INTL,Mizuho International plc,GB,Mizuho,ISDA
+CP088,MIZ BK,"Mizuho Bank, Ltd.",JP,Mizuho,ISDA
+CP089,MUFG EMEA,MUFG Securities EMEA plc,GB,MUFG,ISDA|GMRA
+CP090,MUFG BK,"MUFG Bank, Ltd.",JP,MUFG,ISDA
+CP091,SMBC,Sumitomo Mitsui Banking Corporation,JP,SMBC,ISDA
+CP092,SMBC NIKKO,SMBC Nikko Capital Markets Limited,GB,SMBC,ISDA
+CP093,DAIWA EU,Daiwa Capital Markets Europe Limited,GB,Daiwa,ISDA
+CP094,TOKYO TANSHI,"Tokyo Tanshi Co., Ltd.",JP,Tokyo Tanshi,GMRA
+CP095,UEDA TANSHI,"Ueda Yagi Tanshi Co., Ltd.",JP,Ueda Yagi Tanshi,GMRA
+CP096,CENTRAL TANSHI,"Central Tanshi Co., Ltd.",JP,Central Tanshi,GMRA
+CP097,NOM JP,"Nomura Securities Co., Ltd.",JP,Nomura,ISDA
+CP098,MIZ SEC JP,"Mizuho Securities Co., Ltd.",JP,Mizuho,ISDA|GMRA
+CP099,SMTB,"Sumitomo Mitsui Trust Bank, Limited",JP,Sumitomo Mitsui Trust,ISDA
+CP100,NORIN,The Norinchukin Bank,JP,Norinchukin,ISDA
+CP101,SHINKIN,Shinkin Central Bank,JP,Shinkin,GMRA
+CP102,RESONA,"Resona Bank, Limited",JP,Resona,ISDA
+CP103,MUTB,Mitsubishi UFJ Trust and Banking Corporation,JP,MUFG,ISDA
+CP104,DAIWA JP,Daiwa Securities Co. Ltd.,JP,Daiwa,ISDA|GMRA
+CP105,MIZ TB,"Mizuho Trust & Banking Co., Ltd.",JP,Mizuho,ISDA|GMRA
+CP106,CHIBA,"The Chiba Bank, Ltd.",JP,Chiba Bank,ISDA|GMRA
+CP107,YOKOHAMA,"The Bank of Yokohama, Ltd.",JP,Concordia,ISDA|GMRA
+CP108,BOC,Bank of China Limited,CN,Bank of China,ISDA
+CP109,ICBC,Industrial and Commercial Bank of China Limited,CN,ICBC,ISDA
+CP110,CCB,China Construction Bank Corporation,CN,CCB,ISDA|GMRA
+CP111,ABC,Agricultural Bank of China Limited,CN,ABC,ISDA|GMRA
+CP112,BOCOM,"Bank of Communications Co., Ltd.",CN,BOCOM,ISDA
+CP113,CMB,"China Merchants Bank Co., Ltd.",CN,CMB,ISDA
+CP114,DBS,DBS Bank Ltd.,SG,DBS,ISDA
+CP115,OCBC,Oversea-Chinese Banking Corporation Limited,SG,OCBC,ISDA
+CP116,UOB,United Overseas Bank Limited,SG,UOB,ISDA
+CP117,ANZ,Australia and New Zealand Banking Group Limited,AU,ANZ,ISDA
+CP118,CBA,Commonwealth Bank of Australia,AU,CBA,ISDA
+CP119,NAB,National Australia Bank Limited,AU,NAB,ISDA
+CP120,WBC,Westpac Banking Corporation,AU,Westpac,ISDA|GMRA
+CP121,MQG,Macquarie Bank Limited,AU,Macquarie,ISDA
+CP122,KB,Kookmin Bank,KR,KB Financial,ISDA
+CP123,SHINHAN,Shinhan Bank,KR,Shinhan,ISDA
+CP124,HANA,Hana Bank,KR,Hana Financial,ISDA
+CP125,WOORI,Woori Bank,KR,Woori,ISDA
+CP126,KDB,Korea Development Bank,KR,KDB,ISDA
+CP127,IBK,Industrial Bank of Korea,KR,IBK,ISDA|GMRA
+CP128,NH,NongHyup Bank,KR,NongHyup,ISDA
+CP129,SBI,State Bank of India,IN,SBI,ISDA|GMRA
+CP130,ICICI,ICICI Bank Limited,IN,ICICI,ISDA|GMRA
+CP131,HDFC,HDFC Bank Limited,IN,HDFC,ISDA|GMRA
+CP132,AXIS,Axis Bank Limited,IN,Axis,ISDA|GMRA
+CP133,KOTAK,Kotak Mahindra Bank Limited,IN,Kotak,ISDA
+CP134,BOB,Bank of Baroda,IN,Bank of Baroda,ISDA|GMRA
+CP135,MAYBANK,Malayan Banking Berhad,MY,Maybank,ISDA|GMRA
+CP136,CIMB,CIMB Bank Berhad,MY,CIMB,ISDA|GMRA
+CP137,BBL,Bangkok Bank Public Company Limited,TH,Bangkok Bank,ISDA|GMRA
+CP138,HANG SENG,Hang Seng Bank Limited,HK,HSBC,ISDA
+CP139,CATHAY,Cathay United Bank,TW,Cathay,ISDA|GMRA
+CP140,CTBC,"CTBC Bank Co., Ltd.",TW,CTBC,ISDA
+CP141,MEGA,"Mega International Commercial Bank Co., Ltd.",TW,Mega,ISDA
+CP142,ESUN,"E.SUN Commercial Bank, Ltd.",TW,E.SUN,ISDA|GMRA
+CP143,RBC,Royal Bank of Canada,CA,RBC,ISDA|GMRA
+CP144,RBC EU,RBC Europe Limited,GB,RBC,ISDA
+CP145,TD,The Toronto-Dominion Bank,CA,TD,ISDA
+CP146,TD SEC,TD Securities (USA) LLC,US,TD,ISDA|GMRA
+CP147,BMO,Bank of Montreal,CA,BMO,ISDA
+CP148,BMO CM,BMO Capital Markets Corp.,US,BMO,ISDA
+CP149,BNS,The Bank of Nova Scotia,CA,Scotiabank,ISDA
+CP150,CIBC,Canadian Imperial Bank of Commerce,CA,CIBC,ISDA
+CP151,NBC,National Bank of Canada,CA,National Bank of Canada,ISDA|GMRA
+CP152,FAB,First Abu Dhabi Bank PJSC,AE,FAB,ISDA|GMRA
+CP153,ENBD,Emirates NBD Bank PJSC,AE,Emirates NBD,ISDA
+CP154,QNB,Qatar National Bank (Q.P.S.C.),QA,QNB,ISDA|GMRA
+CP155,SNB,Saudi National Bank,SA,SNB,ISDA
+CP156,SBSA,The Standard Bank of South Africa Limited,ZA,Standard Bank,ISDA|GMRA
+CP157,ABSA,Absa Bank Limited,ZA,Absa,ISDA|GMRA
+CP158,FIRSTRAND,FirstRand Bank Limited,ZA,FirstRand,ISDA
+CP159,ITAU,Itaú Unibanco S.A.,BR,Itau,ISDA
+CP160,BRADESCO,Banco Bradesco S.A.,BR,Bradesco,ISDA|GMRA
+CP161,BB,Banco do Brasil S.A.,BR,Banco do Brasil,ISDA
+CP162,BTG,Banco BTG Pactual S.A.,BR,BTG Pactual,ISDA|GMRA
+CP163,BANCOLOMBIA,Bancolombia S.A.,CO,Bancolombia,ISDA
+CP164,USB,U.S. Bank National Association,US,U.S. Bancorp,ISDA
+CP165,TRUIST,Truist Bank,US,Truist,ISDA
+CP166,PNC,"PNC Bank, National Association",US,PNC,ISDA
+CP167,CITIZENS,"Citizens Bank, N.A.",US,Citizens,ISDA|GMRA
+CP168,KEY,KeyBank National Association,US,KeyCorp,ISDA
+CP169,FITB,"Fifth Third Bank, National Association",US,Fifth Third,ISDA|GMRA
+CP170,REGIONS,Regions Bank,US,Regions,ISDA
+CP171,RJA,"Raymond James & Associates, Inc.",US,Raymond James,ISDA
+CP172,PIPER,Piper Sandler & Co.,US,Piper Sandler,ISDA
+CP173,STIFEL,"Stifel, Nicolaus & Company, Incorporated",US,Stifel,ISDA
+CP174,IBKR,Interactive Brokers LLC,US,Interactive Brokers,ISDA|GMRA
+CP175,VIRTU,Virtu Americas LLC,US,Virtu,ISDA
+CP176,CITADEL SEC,Citadel Securities LLC,US,Citadel Securities,ISDA
+CP177,BPM,Banco BPM S.p.A.,IT,Banco BPM,ISDA
+CP178,MEDIOBANCA,Mediobanca - Banca di Credito Finanziario S.p.A.,IT,Mediobanca,ISDA
+CP179,HELABA,Landesbank Hessen-Thüringen Girozentrale,DE,Helaba,ISDA
+CP180,NORDLB,Norddeutsche Landesbank Girozentrale,DE,NORD/LB,ISDA
+CP181,LBP,La Banque Postale,FR,La Banque Postale,ISDA|GMRA
+CP182,BFCM,Banque Fédérative du Crédit Mutuel,FR,Credit Mutuel,ISDA
+CP183,CIC,Crédit Industriel et Commercial,FR,Credit Mutuel,ISDA
+CP184,BELFIUS,Belfius Bank SA/NV,BE,Belfius,ISDA|GMRA
+CP185,NYKREDIT,Nykredit Bank A/S,DK,Nykredit,ISDA|GMRA
+CP186,JYSKE,Jyske Bank A/S,DK,Jyske,ISDA|GMRA
+CP187,OP,OP Corporate Bank plc,FI,OP Financial,ISDA|GMRA
+CP188,PKO,PKO Bank Polski S.A.,PL,PKO,ISDA
+CP189,BCP,"Banco Comercial Português, S.A.",PT,Millennium bcp,ISDA
+CP190,CGD,"Caixa Geral de Depósitos, S.A.",PT,CGD,ISDA
+CP191,NBG,National Bank of Greece S.A.,GR,NBG,ISDA
+CP192,PIRAEUS,Piraeus Bank S.A.,GR,Piraeus,ISDA
+CP193,EUROBANK,Eurobank S.A.,GR,Eurobank,ISDA
+CP194,ALPHA GR,Alpha Bank S.A.,GR,Alpha Bank,ISDA
+CP195,SAN US,Santander US Capital Markets LLC,US,Santander,ISDA|GMRA
+CP196,SMBC NIKKO JP,SMBC Nikko Securities Inc.,JP,SMBC,ISDA|GMRA
+CP197,BEA,"The Bank of East Asia, Limited",HK,BEA,ISDA|GMRA
+CP198,SCB HK,Standard Chartered Bank (Hong Kong) Limited,HK,Standard Chartered,ISDA|GMRA
+CP199,VONTOBEL,Bank Vontobel AG,CH,Vontobel,ISDA
+CP200,EFG,EFG Bank AG,CH,EFG,ISDA
