@@ -1,0 +1,50 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadOnlyItsOwnSecrets",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:eu-west-1:<account-id>:secret:marginwatch/prod/agent-bank/*"
+    },
+    {
+      "Sid": "DecryptWithTheSecretsKeyOnlyViaSecretsManager",
+      "Effect": "Allow",
+      "Action": "kms:Decrypt",
+      "Resource": "arn:aws:kms:eu-west-1:<account-id>:key/<secrets-key-id>",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.eu-west-1.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "ReadItsNonSecretSettings",
+      "Effect": "Allow",
+      "Action": "ssm:GetParameter",
+      "Resource": "arn:aws:ssm:eu-west-1:<account-id>:parameter/marginwatch/prod/agent-bank/*"
+    },
+    {
+      "Sid": "WriteOnlyToItsLandingPrefix",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::marginwatch-landing-<account-id>-euw1/source=agent_bank/*"
+    },
+    {
+      "Sid": "ListOwnPrefixSoMissingObjectsReturn404",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::marginwatch-landing-<account-id>-euw1",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "source=agent_bank/*"
+          ]
+        }
+      }
+    }
+  ]
+}
