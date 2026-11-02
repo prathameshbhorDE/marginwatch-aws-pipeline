@@ -17,3 +17,8 @@ Each entry: what we chose, what we didn't, and why.
 | 11 | **OAuth access tokens kept in memory only** | Store the token | It expires in minutes; storing it only creates another thing to protect. |
 | 12 | **Counterparty master as a config file; legal entity is the key** | Hard-coded names; match on group name | A new counterparty is a data change, not a code change. Different legal entities of one group have different agreements and calls. |
 | 13 | **Fuzzy name matches are suggestions, never auto-applied** | Auto-accept above a score | "Morgan Stanley & Co" scored 0.93 against the US LLC but could be the London plc: a wrong match books a call against the wrong agreement. |
+| 14 | **Customer-managed KMS key for the lake and secrets, yearly rotation** | SSE-S3 (AWS-owned key); AWS-managed `aws/s3` key | We control who can use the key with IAM, every use is logged in CloudTrail, and disabling the key locks the data. About $1/month. |
+| 15 | **S3 Bucket Keys on** | One KMS call per object | Glue writes many Parquet files; a bucket-level key cuts KMS requests (cost and throttling) sharply. |
+| 16 | **One bucket per layer (bronze / silver / gold / artifacts)** | One bucket with folders | Each layer gets its own access rules (e.g. Power BI reads gold only) and its own lifecycle. |
+| 17 | **Secret created empty by Terraform, value set with the CLI** | Secret value in Terraform | Anything in Terraform is also stored in plain text in the state file. |
+| 18 | **No versioning on bronze/silver/gold** | Versioning everywhere | Each layer can be rebuilt from the one below; old versions would only add storage cost. Landing (raw originals) and artifacts keep versions. |

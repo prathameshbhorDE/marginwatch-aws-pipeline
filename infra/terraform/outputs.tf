@@ -20,3 +20,16 @@ output "file_register_table" {
 output "cutoff_check_function" {
   value = aws_lambda_function.cutoff_check.function_name
 }
+
+output "lake_buckets" {
+  description = "Bronze / silver / gold / artifacts bucket names"
+  value       = { for k, b in aws_s3_bucket.lake : k => b.bucket }
+}
+
+output "lake_kms_alias" {
+  value = aws_kms_alias.lake.name
+}
+
+output "agent_bank_secret_name" {
+  value = aws_secretsmanager_secret.agent_bank_oauth.name
+}
