@@ -7,3 +7,8 @@ output "account_id" {
   value     = data.aws_caller_identity.current.account_id
   sensitive = true
 }
+
+output "watermark_table" {
+  description = "DynamoDB table holding the incremental-load watermarks"
+  value       = aws_dynamodb_table.watermarks.name
+}
