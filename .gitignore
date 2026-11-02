@@ -15,3 +15,4 @@ crash.log
 infra/terraform/build/
 # Personal values for Terraform (e.g. alert email) - kept off GitHub
 *.tfvars
+out.json
