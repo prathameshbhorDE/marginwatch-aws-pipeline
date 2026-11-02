@@ -10,7 +10,7 @@ What it does for every file of one business date:
   5. attaches lineage metadata: source, business date, received time, message id, checksum
 
 Usage (real AWS, credentials from your AWS profile):
-  python src/ingestion/upload_to_landing.py --bucket marginwatch-landing-<acct>-euw1 --date 2026-10-26
+  python src/ingestion/upload_to_landing.py --bucket marginwatch-dev-landing-<account-id>-ap-south-1 --date 2026-10-26
 """
 import argparse, hashlib, json, os, sys
 from datetime import datetime, timezone
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     ap.add_argument("--bucket", required=True)
     ap.add_argument("--date", required=True, help="business date YYYY-MM-DD")
     ap.add_argument("--local-root", default="sample_data/landing")
-    ap.add_argument("--region", default="eu-west-1")
+    ap.add_argument("--region", default="ap-south-1")
     args = ap.parse_args()
     out = run(boto3.client("s3", region_name=args.region), args.bucket, args.local_root, args.date)
     counts = {}

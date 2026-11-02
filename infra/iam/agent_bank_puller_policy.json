@@ -5,16 +5,16 @@
       "Sid": "ReadOnlyItsOwnSecrets",
       "Effect": "Allow",
       "Action": "secretsmanager:GetSecretValue",
-      "Resource": "arn:aws:secretsmanager:eu-west-1:<account-id>:secret:marginwatch/prod/agent-bank/*"
+      "Resource": "arn:aws:secretsmanager:ap-south-1:<account-id>:secret:marginwatch/prod/agent-bank/*"
     },
     {
       "Sid": "DecryptWithTheSecretsKeyOnlyViaSecretsManager",
       "Effect": "Allow",
       "Action": "kms:Decrypt",
-      "Resource": "arn:aws:kms:eu-west-1:<account-id>:key/<secrets-key-id>",
+      "Resource": "arn:aws:kms:ap-south-1:<account-id>:key/<secrets-key-id>",
       "Condition": {
         "StringEquals": {
-          "kms:ViaService": "secretsmanager.eu-west-1.amazonaws.com"
+          "kms:ViaService": "secretsmanager.ap-south-1.amazonaws.com"
         }
       }
     },
@@ -22,7 +22,7 @@
       "Sid": "ReadItsNonSecretSettings",
       "Effect": "Allow",
       "Action": "ssm:GetParameter",
-      "Resource": "arn:aws:ssm:eu-west-1:<account-id>:parameter/marginwatch/prod/agent-bank/*"
+      "Resource": "arn:aws:ssm:ap-south-1:<account-id>:parameter/marginwatch/prod/agent-bank/*"
     },
     {
       "Sid": "WriteOnlyToItsLandingPrefix",
@@ -31,13 +31,13 @@
         "s3:PutObject",
         "s3:GetObject"
       ],
-      "Resource": "arn:aws:s3:::marginwatch-landing-<account-id>-euw1/source=agent_bank/*"
+      "Resource": "arn:aws:s3:::marginwatch-dev-landing-<account-id>-ap-south-1/source=agent_bank/*"
     },
     {
       "Sid": "ListOwnPrefixSoMissingObjectsReturn404",
       "Effect": "Allow",
       "Action": "s3:ListBucket",
-      "Resource": "arn:aws:s3:::marginwatch-landing-<account-id>-euw1",
+      "Resource": "arn:aws:s3:::marginwatch-dev-landing-<account-id>-ap-south-1",
       "Condition": {
         "StringLike": {
           "s3:prefix": [

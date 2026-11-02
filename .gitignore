@@ -6,3 +6,8 @@ data/
 *.parquet
 .aws/
 .DS_Store
+# Terraform: provider downloads and state (state can hold sensitive values - never commit it)
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
