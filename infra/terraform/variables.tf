@@ -21,3 +21,8 @@ variable "allow_destroy_with_data" {
   type        = bool
   default     = true
 }
+
+variable "alert_email" {
+  description = "Email address that receives the daily cut-off summary (confirm the subscription email AWS sends)"
+  type        = string
+}

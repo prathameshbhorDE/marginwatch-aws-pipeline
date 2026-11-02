@@ -11,3 +11,7 @@ data/
 *.tfstate
 *.tfstate.*
 crash.log
+# Terraform-built Lambda zips
+infra/terraform/build/
+# Personal values for Terraform (e.g. alert email) - kept off GitHub
+*.tfvars

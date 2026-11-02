@@ -12,3 +12,11 @@ output "watermark_table" {
   description = "DynamoDB table holding the incremental-load watermarks"
   value       = aws_dynamodb_table.watermarks.name
 }
+
+output "file_register_table" {
+  value = aws_dynamodb_table.file_register.name
+}
+
+output "cutoff_check_function" {
+  value = aws_lambda_function.cutoff_check.function_name
+}

@@ -88,11 +88,14 @@ def land_file(s3, bucket, item):
     return status, digest
 
 
-def run(s3, bucket, local_root, business_date):
+def run(s3, bucket, local_root, business_date, arrived_by=None):
+    """arrived_by (ISO UTC time) replays the morning: only files received up to that moment are landed."""
     from datetime import date, timedelta
     next_day = (date.fromisoformat(business_date) + timedelta(days=1)).isoformat()
     results = []
     for item in plan_uploads(local_root, business_date, next_day):
+        if arrived_by and item["metadata"]["received-at-utc"] > arrived_by:
+            continue
         status, digest = land_file(s3, bucket, item)
         results.append({"key": item["key"], "status": status, "sha256": digest[:12],
                         "received_at_utc": item["metadata"]["received-at-utc"]})
@@ -105,8 +108,9 @@ if __name__ == "__main__":
     ap.add_argument("--date", required=True, help="business date YYYY-MM-DD")
     ap.add_argument("--local-root", default="sample_data/landing")
     ap.add_argument("--region", default="ap-south-1")
+    ap.add_argument("--arrived-by", help="only land files received up to this UTC time, e.g. 2026-10-27T12:30:00+00:00")
     args = ap.parse_args()
-    out = run(boto3.client("s3", region_name=args.region), args.bucket, args.local_root, args.date)
+    out = run(boto3.client("s3", region_name=args.region), args.bucket, args.local_root, args.date, args.arrived_by)
     counts = {}
     for r in out:
         counts[r["status"]] = counts.get(r["status"], 0) + 1
