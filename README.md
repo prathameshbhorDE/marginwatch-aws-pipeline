@@ -1,8 +1,8 @@
 # MarginWatch — daily collateral margin pipeline on AWS
 
-> **Status: work in progress.** Ingestion layer built and tested locally against mocked AWS.
-> Processing (Bronze/Silver/Gold), orchestration and the Power BI dashboard are **planned**.
-> All data is synthetic — see [Data disclaimer](#data-disclaimer).
+> **Status: work in progress.** Ingestion and **Bronze** run on real AWS (Mumbai, `ap-south-1`), built with Terraform.
+> Silver, Gold, orchestration and the Power BI dashboard are **next**.
+> All data is synthetic: see [Data disclaimer](#data-disclaimer).
 
 ## The business problem
 A fund administrator runs daily collateral for a hedge fund with **~200 counterparties** under
@@ -17,31 +17,36 @@ ISDA/CSA (derivatives) and GMRA (repo) agreements. Every morning it must:
 Done by hand in Excel this is slow and fragile: late files, changing formats, corrected re-sends,
 disputes. MarginWatch automates it as a data pipeline.
 
-## Architecture (target)
+## Architecture
 ```
  Counterparty emails (Excel/PDF) ─┐
- Agent bank REST API (CSV)  ──────┼─► S3 landing (raw, versioned) ─► file register ─► 12:30 cut-off
- Collateral Hub DB (planned) ─────┘        (DynamoDB, planned)            │
-                                                                          ▼
-          Power BI ◄── Athena ◄── Gold (margin summary) ◄── Silver ◄── Bronze   (Glue PySpark, planned)
+ Agent bank REST API (CSV) ───────┼─► S3 landing (raw, versioned) ─► file register (DynamoDB) ─► 12:30 Dublin cut-off alert (SNS)
+ Collateral Hub DB (PostgreSQL) ──┘   watermark CDC, bookmark in DynamoDB
+                                             │
+                                             ▼
+   Bronze (Glue PySpark → Parquet, Athena) ─► Silver (planned) ─► Gold star schema (planned) ─► Athena ─► Power BI (planned)
 ```
 Ingestion is **event-driven** (every file is recorded as it lands); processing is **batch**
-(at the 12:30 Dublin cut-off, plus update runs for late files).
+(at the 12:30 Dublin cut-off, plus update runs for late files). Every lake bucket and secret is encrypted
+with a customer-managed KMS key.
 
 ## What is built so far
 | Part | What it does | Files | Status |
 |---|---|---|---|
 | Synthetic data generator | One business day: 200 counterparties, 271 agreements, ~2,350 trades, 396 email attachments (Excel/PDF MTM files + margin call notices), agent bank CSVs, Collateral Hub extracts, and an **answer key** of the expected margin summary. Same seed → byte-identical files. | `src/generators/`, `config/counterparties.csv` | ✅ Built |
-| S3 landing | Partitioned by `source=` / `business_date=`, SHA-256 idempotency (re-runs skip, corrected re-sends become new S3 versions), lineage metadata, encryption | `src/ingestion/upload_to_landing.py`, `infra/s3/landing_lifecycle.json` | ✅ Built, tested on mocked S3 |
+| S3 landing | Partitioned by `source=` / `business_date=`, SHA-256 idempotency (re-runs skip, corrected re-sends become new S3 versions), lineage metadata, versioning, lifecycle rules | `src/ingestion/upload_to_landing.py`, `infra/terraform/s3_landing.tf` | ✅ Running on AWS |
+| Collateral Hub pull (watermark CDC) | PostgreSQL source with a trigger-maintained `last_modified`; incremental pull with a fixed upper bound and a 5-minute overlap; the bookmark (watermark) lives in DynamoDB and moves only after the extract has landed | `src/collateral_hub/`, `src/ingestion/collateral_hub_pull.py`, `infra/terraform/dynamodb.tf` | ✅ Running on AWS |
+| File register + 12:30 cut-off alert | S3 → EventBridge → Lambda records every file in DynamoDB (on time / late); EventBridge Scheduler (Europe/Dublin) runs a Lambda at 12:30 that sends **one** SNS email: READY or INCOMPLETE, with missing and late counterparties | `src/lambdas/file_register.py`, `src/lambdas/cutoff_check.py`, `infra/terraform/file_register.tf` | ✅ Running on AWS |
+| Encryption and secrets | Customer-managed KMS key (yearly rotation); bronze/silver/gold/artifacts buckets SSE-KMS with S3 Bucket Keys, HTTPS-only; agent bank OAuth secret in Secrets Manager locked with the same key | `infra/terraform/kms.tf`, `lake_buckets.tf`, `secrets.tf`, `tests/check_lake_security.py` | ✅ Running on AWS |
+| Bronze (Glue PySpark) | Parses every landed Excel/PDF/CSV into 9 Parquet tables, values kept as text, lineage on every row, bad files to a quarantine table, idempotent re-runs per business date; Athena tables with partition projection | `config/bronze_tables.json`, `src/bronze/`, `src/glue/bronze_job.py`, `infra/terraform/glue_bronze.tf`, `sql/bronze_checks.sql` | ✅ Running on AWS |
 | Agent bank REST pull | OAuth2 client credentials, cursor pagination, retry policy (429 / 5xx / 401), checksum verification, checkpointing | `src/ingestion/agent_bank_pull.py` | ✅ Built, tested against a mock bank API |
-| Credentials | Secrets Manager + KMS, least-privilege IAM role per job, 5-minute cache, redacted logging | `src/common/secret_store.py`, `src/lambdas/agent_bank_puller_handler.py`, `infra/iam/` | ✅ Built, tested on mocked AWS |
+| Credentials helper | Reads secrets at runtime, least-privilege IAM per job, 5-minute cache, redacted logging | `src/common/secret_store.py`, `src/lambdas/agent_bank_puller_handler.py`, `infra/iam/` | ✅ Built, tested on mocked AWS |
 | Counterparty matching (MDM) | Maps name variants to one counterparty id; exact first, fuzzy only as a suggestion for review | `src/mdm/counterparty_matching.py` | 🟡 First version |
-| Collateral Hub DB pull (watermark/CDC) | | | ⏳ Planned |
-| File register + cut-off gate | | | ⏳ Planned |
+| Silver (clean, type, de-duplicate, data quality) | | | ⏳ Next |
+| Gold (star schema + margin calculation vs answer key) | | | ⏳ Planned |
 | Step Functions orchestration | | | ⏳ Planned |
-| Bronze / Silver / Gold (Glue PySpark, Delta) | | | ⏳ Planned |
-| Athena + Power BI dashboard | | | ⏳ Planned |
-| CI/CD (GitHub Actions), Terraform | | | ⏳ Planned |
+| Power BI dashboard | | | ⏳ Planned |
+| CI/CD (GitHub Actions) | | | ⏳ Planned |
 
 ## How to run it locally
 Requires **Python 3.10 or newer** (macOS ships 3.9, which is end-of-life; `reportlab` refuses to import on it).
@@ -55,21 +60,36 @@ python tests/demo_agent_bank_pull.py     # REST pull vs mock bank (429, 503, exp
 python tests/demo_secrets.py             # where credentials live, caching, rotation
 python tests/demo_lambda_secrets.py      # how the Lambda reads its secret (cold vs warm start)
 python src/mdm/counterparty_matching.py  # name matching demo
+python tests/demo_bronze_parsers.py      # Bronze parsers on one day of files (no Spark, no AWS)
 ```
 No AWS account is needed for the demos: they use `moto`, a library that imitates AWS locally.
+`tests/demo_bronze_job_local.py` runs the full Glue job on local Spark (needs `pip install pyspark==3.5.4 "moto[server]"` and Java 17).
+
+## How to deploy and run on AWS
+```bash
+cd infra/terraform && terraform init && terraform plan -out=plan.tfplan && terraform apply plan.tfplan
+cd ../.. && python src/ingestion/upload_to_landing.py --bucket <landing bucket> --date 2026-10-26
+AWS_PROFILE=<profile> python scripts/run_bronze_job.py --date 2026-10-26     # then sql/bronze_checks.sql in Athena
+```
 
 ## Repository layout
 ```
-config/            counterparty master (200 legal entities)
-docs/              data contracts, design decisions, issues log
-infra/             S3 lifecycle rules, IAM policy
+config/            counterparty master (200 legal entities), Bronze data contract
+docs/              data contracts, design decisions, issues log, screenshots (docs/images)
+infra/terraform/   every AWS resource (S3, KMS, DynamoDB, Lambda, EventBridge, SNS, Glue, Athena)
+infra/iam/         example least-privilege policy for the agent bank puller
 sample_data/       one generated business day (2026-10-26) + expected answer key
+scripts/           run the Bronze Glue job and print its summary
+sql/               Athena check queries
+src/bronze/        Bronze parsers (Excel/PDF/CSV) and row mapping
+src/collateral_hub/  Collateral Hub schema and loader (PostgreSQL)
 src/common/        shared helpers (secrets)
 src/generators/    synthetic data
-src/ingestion/     S3 landing, agent bank REST pull
-src/lambdas/       Lambda entry points
+src/glue/          Glue PySpark jobs
+src/ingestion/     S3 landing, agent bank REST pull, Collateral Hub watermark pull
+src/lambdas/       Lambda functions (file register, cut-off check, agent bank puller)
 src/mdm/           counterparty identity matching
-tests/             runnable demos against mocked AWS and a mock bank API
+tests/             runnable demos against mocked AWS, a mock bank API, local Spark; AWS security check
 ```
 
 ## Further reading in this repo
@@ -81,5 +101,11 @@ tests/             runnable demos against mocked AWS and a mock bank API
 Counterparty names are real institutions used **only as labels**. Every trade, valuation, balance,
 holding and margin amount is randomly generated. No real client, fund or counterparty data is used.
 
-## Metrics
-To be filled in with numbers measured on real AWS runs (not estimates).
+## Metrics (measured on real AWS runs)
+| What | Result |
+|---|---|
+| Landing one business day | 401 files uploaded; re-run: 401 skipped (idempotent) |
+| Collateral Hub watermark pull | full load 1,084 rows; next run after a simulated day: 11 changed rows |
+| 12:30 cut-off alert | INCOMPLETE (10 missing) before the late files, READY (10 late) after |
+| Bronze Glue job, one business day | 403 files → 9 tables, 0 quarantined, **188 s** on 2 × G.1X (includes start-up and library install) |
+| Athena on Bronze | count over all 9 tables: **6.40 KB scanned, 851 ms** |
