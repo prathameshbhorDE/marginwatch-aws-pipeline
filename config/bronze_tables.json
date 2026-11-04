@@ -1,0 +1,202 @@
+{
+  "_about": "Bronze data contract. ONE place that says which columns each Bronze table has. Used by the Glue job (to pick and check columns) and by Terraform (to create the Athena tables). Keys = Bronze column name (snake_case, safe for Parquet/Athena); values = column name in the source file. 'required' columns must be in the file, otherwise the file is quarantined. Every value is stored as text in Bronze.",
+  "_lineage": [
+    "source_system",
+    "source_file",
+    "source_key",
+    "source_sha256",
+    "received_at_utc",
+    "source_row",
+    "ingest_run_id",
+    "ingested_at_utc"
+  ],
+  "_lineage_about": "Added to every Bronze table: where each row came from (file, S3 key, checksum, arrival time, row in the file) and which run loaded it. The partition column business_date is added on top.",
+  "bronze_cpty_mtm": {
+    "description": "Counterparty MTM statements (Excel and PDF), one row per trade",
+    "file_level": [
+      "cpty_id",
+      "agreement_type"
+    ],
+    "columns": {
+      "trade_ref": "Trade Ref",
+      "product": "Product",
+      "notional": "Notional",
+      "currency": "Currency",
+      "mtm_cpty_view": "MTM (Cpty view)",
+      "agreement": "Agreement"
+    },
+    "required": [
+      "trade_ref",
+      "notional",
+      "currency",
+      "mtm_cpty_view"
+    ]
+  },
+  "bronze_cpty_margin_call": {
+    "description": "Counterparty margin call notices (PDF), one row per notice",
+    "file_level": [
+      "cpty_id",
+      "agreement_type"
+    ],
+    "columns": {
+      "agreement": "Agreement",
+      "valuation_date": "Valuation date",
+      "exposure_usd": "Exposure (USD)",
+      "im_client_usd": "IM - client (USD)",
+      "im_cpty_usd": "IM - counterparty (USD)",
+      "collateral_held_usd": "Collateral held (USD, post-haircut)",
+      "call_recall_usd": "Call / Recall (USD)",
+      "settlement": "Settlement",
+      "sender_name": "From"
+    },
+    "required": [
+      "agreement",
+      "exposure_usd",
+      "im_client_usd",
+      "im_cpty_usd",
+      "collateral_held_usd",
+      "call_recall_usd"
+    ]
+  },
+  "bronze_pb_margin": {
+    "description": "Prime broker margin report (Excel), one row per account",
+    "file_level": [
+      "cpty_id",
+      "agreement_type"
+    ],
+    "columns": {
+      "account": "Account",
+      "account_type": "Account Type",
+      "total_equity_usd": "Total Equity (USD)",
+      "total_requirement_usd": "Total Requirement (USD)",
+      "excess_deficit_usd": "Excess/Deficit (USD)"
+    },
+    "required": [
+      "account",
+      "total_equity_usd",
+      "total_requirement_usd",
+      "excess_deficit_usd"
+    ]
+  },
+  "bronze_bank_trades_mtm": {
+    "description": "Agent bank trades and MTM report (CSV), one row per trade",
+    "file_level": [],
+    "columns": {
+      "fund_id": "fund_id",
+      "agreement_id": "agreement_id",
+      "cpty_id": "cpty_id",
+      "trade_id": "trade_id",
+      "product": "product",
+      "notional": "notional",
+      "ccy": "ccy",
+      "mtm": "mtm",
+      "valuation_date": "valuation_date"
+    },
+    "required": [
+      "agreement_id",
+      "trade_id",
+      "notional",
+      "ccy",
+      "mtm",
+      "valuation_date"
+    ]
+  },
+  "bronze_bank_holdings": {
+    "description": "Agent bank securities holdings statement (CSV), one row per position",
+    "file_level": [],
+    "columns": {
+      "account": "account",
+      "isin": "isin",
+      "security_name": "security_name",
+      "nominal": "nominal",
+      "price": "price",
+      "market_value": "market_value",
+      "currency": "currency",
+      "pledged_to": "pledged_to",
+      "statement_date": "statement_date"
+    },
+    "required": [
+      "account",
+      "isin",
+      "nominal",
+      "price",
+      "statement_date"
+    ]
+  },
+  "bronze_ch_agreements": {
+    "description": "Collateral Hub agreement terms (full extract or watermark CDC extract)",
+    "file_level": [],
+    "columns": {
+      "agreement_id": "agreement_id",
+      "fund_id": "fund_id",
+      "cpty_id": "cpty_id",
+      "cpty_short_name": "cpty_short_name",
+      "cpty_legal_name": "cpty_legal_name",
+      "agreement_type": "agreement_type",
+      "base_ccy": "base_ccy",
+      "threshold": "threshold",
+      "mta": "mta",
+      "im_fund": "im_fund",
+      "im_cpty": "im_cpty",
+      "effective_from": "effective_from",
+      "effective_to": "effective_to",
+      "last_modified": "last_modified"
+    },
+    "required": [
+      "agreement_id",
+      "cpty_id",
+      "agreement_type",
+      "threshold",
+      "mta",
+      "im_fund",
+      "im_cpty"
+    ]
+  },
+  "bronze_ch_balances": {
+    "description": "Collateral Hub collateral balances (full extract or watermark CDC extract)",
+    "file_level": [],
+    "columns": {
+      "balance_id": "balance_id",
+      "agreement_id": "agreement_id",
+      "collateral_type": "collateral_type",
+      "isin": "isin",
+      "quantity": "quantity",
+      "price": "price",
+      "haircut_pct": "haircut_pct",
+      "currency": "currency",
+      "market_value_usd": "market_value_usd",
+      "post_haircut_value_usd": "post_haircut_value_usd",
+      "as_of_date": "as_of_date",
+      "last_modified": "last_modified"
+    },
+    "required": [
+      "agreement_id",
+      "collateral_type",
+      "post_haircut_value_usd",
+      "as_of_date"
+    ]
+  },
+  "bronze_fx_rates": {
+    "description": "FX rates to USD (CSV)",
+    "file_level": [],
+    "columns": {
+      "rate_date": "rate_date",
+      "ccy": "ccy",
+      "to_usd": "to_usd"
+    },
+    "required": [
+      "rate_date",
+      "ccy",
+      "to_usd"
+    ]
+  },
+  "bronze_quarantine": {
+    "description": "Files Bronze could not read, and why (one row per file)",
+    "file_level": [],
+    "columns": {
+      "error": "error",
+      "target_table": "target_table"
+    },
+    "required": []
+  }
+}

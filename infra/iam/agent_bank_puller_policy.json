@@ -5,13 +5,13 @@
       "Sid": "ReadOnlyItsOwnSecrets",
       "Effect": "Allow",
       "Action": "secretsmanager:GetSecretValue",
-      "Resource": "arn:aws:secretsmanager:ap-south-1:<account-id>:secret:marginwatch/prod/agent-bank/*"
+      "Resource": "arn:aws:secretsmanager:ap-south-1:<account-id>:secret:marginwatch/dev/agent-bank/*"
     },
     {
       "Sid": "DecryptWithTheSecretsKeyOnlyViaSecretsManager",
       "Effect": "Allow",
       "Action": "kms:Decrypt",
-      "Resource": "arn:aws:kms:ap-south-1:<account-id>:key/<secrets-key-id>",
+      "Resource": "arn:aws:kms:ap-south-1:<account-id>:key/<marginwatch-dev-lake-key-id>",
       "Condition": {
         "StringEquals": {
           "kms:ViaService": "secretsmanager.ap-south-1.amazonaws.com"
@@ -22,7 +22,7 @@
       "Sid": "ReadItsNonSecretSettings",
       "Effect": "Allow",
       "Action": "ssm:GetParameter",
-      "Resource": "arn:aws:ssm:ap-south-1:<account-id>:parameter/marginwatch/prod/agent-bank/*"
+      "Resource": "arn:aws:ssm:ap-south-1:<account-id>:parameter/marginwatch/dev/agent-bank/*"
     },
     {
       "Sid": "WriteOnlyToItsLandingPrefix",

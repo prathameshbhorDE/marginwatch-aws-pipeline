@@ -33,3 +33,15 @@ output "lake_kms_alias" {
 output "agent_bank_secret_name" {
   value = aws_secretsmanager_secret.agent_bank_oauth.name
 }
+
+output "bronze_glue_job" {
+  value = aws_glue_job.bronze.name
+}
+
+output "bronze_database" {
+  value = aws_glue_catalog_database.bronze.name
+}
+
+output "athena_workgroup" {
+  value = aws_athena_workgroup.marginwatch.name
+}
