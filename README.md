@@ -1,7 +1,7 @@
 # MarginWatch — daily collateral margin pipeline on AWS
 
-> **Status: work in progress.** Ingestion and **Bronze** run on real AWS (Mumbai, `ap-south-1`), built with Terraform.
-> Silver, Gold, orchestration and the Power BI dashboard are **next**.
+> **Status: work in progress.** Ingestion, **Bronze** and **Silver** run on real AWS (Mumbai, `ap-south-1`), built with Terraform.
+> Gold (reconciliation built, margin calculation next), orchestration and the Power BI dashboard are in progress.
 > All data is synthetic: see [Data disclaimer](#data-disclaimer).
 
 ## The business problem
@@ -24,7 +24,7 @@ disputes. MarginWatch automates it as a data pipeline.
  Collateral Hub DB (PostgreSQL) ──┘   watermark CDC, bookmark in DynamoDB
                                              │
                                              ▼
-   Bronze (Glue PySpark → Parquet, Athena) ─► Silver (planned) ─► Gold star schema (planned) ─► Athena ─► Power BI (planned)
+   Bronze (Glue → Parquet) ─► Silver (Glue → Iceberg, SCD2, DQ gate) ─► Gold (Glue → Iceberg: recon, margin calls) ─► Athena ─► Power BI (planned)
 ```
 Ingestion is **event-driven** (every file is recorded as it lands); processing is **batch**
 (at the 12:30 Dublin cut-off, plus update runs for late files). Every lake bucket and secret is encrypted
@@ -42,8 +42,9 @@ with a customer-managed KMS key.
 | Agent bank REST pull | OAuth2 client credentials, cursor pagination, retry policy (429 / 5xx / 401), checksum verification, checkpointing | `src/ingestion/agent_bank_pull.py` | ✅ Built, tested against a mock bank API |
 | Credentials helper | Reads secrets at runtime, least-privilege IAM per job, 5-minute cache, redacted logging | `src/common/secret_store.py`, `src/lambdas/agent_bank_puller_handler.py`, `infra/iam/` | ✅ Built, tested on mocked AWS |
 | Counterparty matching (MDM) | Maps name variants to one counterparty id; exact first, fuzzy only as a suggestion for review | `src/mdm/counterparty_matching.py` | 🟡 First version |
-| Silver (clean, type, de-duplicate, data quality) | | | ⏳ Next |
-| Gold (star schema + margin calculation vs answer key) | | | ⏳ Planned |
+| Silver (Iceberg) | Text → decimals and dates, counterparty MTM flipped to the fund's view, USD via FX, agreement keys, de-duplication (latest version wins), invalid ISINs flagged, SCD2 agreement history via Iceberg MERGE, ~59 data quality checks with a gate (any ERROR stops the pipeline) | `src/silver/`, `src/glue/silver_job.py`, `infra/terraform/glue_silver.tf`, `sql/silver_checks.sql` | ✅ Running on AWS |
+| Gold step 1: trade reconciliation | Our MTM vs the counterparty's per trade (full outer join): MATCHED / MTM_BREAK / MISSING_AT_CPTY / UNKNOWN_AT_US, tolerance 5,000 USD and 5% from a config file | `src/gold/gold_recon.py`, `src/glue/gold_job.py`, `config/gold_tolerances.csv`, `infra/terraform/glue_gold.tf` | ✅ Built, tested on local Spark |
+| Gold step 2: margin calculation + star schema (checked against the answer key) | | | ⏳ Next |
 | Step Functions orchestration | | | ⏳ Planned |
 | Power BI dashboard | | | ⏳ Planned |
 | CI/CD (GitHub Actions) | | | ⏳ Planned |
@@ -74,7 +75,7 @@ AWS_PROFILE=<profile> python scripts/run_bronze_job.py --date 2026-10-26     # t
 
 ## Repository layout
 ```
-config/            counterparty master (200 legal entities), Bronze data contract
+config/            counterparty master (200 legal entities), Bronze data contract, break tolerances
 docs/              data contracts, design decisions, issues log, screenshots (docs/images)
 infra/terraform/   every AWS resource (S3, KMS, DynamoDB, Lambda, EventBridge, SNS, Glue, Athena)
 infra/iam/         example least-privilege policy for the agent bank puller
@@ -83,6 +84,8 @@ scripts/           run the Bronze Glue job and print its summary
 sql/               Athena check queries
 src/bronze/        Bronze parsers (Excel/PDF/CSV) and row mapping
 src/collateral_hub/  Collateral Hub schema and loader (PostgreSQL)
+src/silver/        Silver transformations (types, USD, de-dup, SCD2)
+src/gold/          Gold reconciliation and margin logic
 src/common/        shared helpers (secrets)
 src/generators/    synthetic data
 src/glue/          Glue PySpark jobs
@@ -109,3 +112,4 @@ holding and margin amount is randomly generated. No real client, fund or counter
 | 12:30 cut-off alert | INCOMPLETE (10 missing) before the late files, READY (10 late) after |
 | Bronze Glue job, one business day | 403 files → 9 tables, 0 quarantined, **188 s** on 2 × G.1X (includes start-up and library install) |
 | Athena on Bronze | count over all 9 tables: **6.40 KB scanned, 851 ms** |
+| Silver Glue job (Iceberg), one business date | 59 data quality checks: 56 pass, 3 expected warnings, 0 fail; **158 s** on 2 × G.1X |

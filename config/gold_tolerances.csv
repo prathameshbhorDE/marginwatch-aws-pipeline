@@ -1,0 +1,4 @@
+scope_type,scope_value,abs_usd,pct,note
+DEFAULT,*,5000,0.05,"break if |their MTM - our MTM| >= 5,000 USD AND >= 5% of |our MTM|"
+AGREEMENT_TYPE,ISDA,5000,0.05,derivatives (ISDA/CSA)
+AGREEMENT_TYPE,GMRA,5000,0.05,repo (GMRA)
