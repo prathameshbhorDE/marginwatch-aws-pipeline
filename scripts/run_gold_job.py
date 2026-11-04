@@ -41,4 +41,13 @@ for st, n in f["by_status"].items():
 for b in s["breaks"]:
     print(f"  BREAK {b['agreement_id']} {b['trade_id']:12} {b['recon_status']:16} ours={b['mtm_ours_usd']} "
           f"theirs={b['mtm_theirs_usd']} diff={b['difference_usd']}")
+m = s.get("fact_margin_call")
+if m:
+    print(f"\n  fact_margin_call rows={m['rows']}")
+    for k, v in m["by_summary_action"].items():
+        print(f"    {k:55} {v:4}")
+    print(f"  client approval required: {len(m['client_approval_required'])} agreements")
+    for x in m["calls_not_agreed"]:
+        print(f"  CALL DISPUTE {x['agreement_id']}: ours net={x['net_excess_deficit_usd']} theirs={x['cpty_call_direction']} "
+              f"{x['cpty_call_amount_usd']} diff={x['call_difference_usd']} trade breaks={x['trade_breaks']}")
 print(f"  checks: {s['dq']['checks']}, fail: {s['dq']['fail'] or 'none'}")

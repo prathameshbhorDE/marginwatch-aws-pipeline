@@ -10,6 +10,10 @@ data "archive_file" "gold_lib" {
     content  = file("${path.module}/../../src/gold/gold_recon.py")
     filename = "gold_recon.py"
   }
+  source {
+    content  = file("${path.module}/../../src/gold/gold_margin.py")
+    filename = "gold_margin.py"
+  }
 }
 
 resource "aws_s3_object" "gold_script" {
@@ -19,12 +23,20 @@ resource "aws_s3_object" "gold_script" {
   source_hash = filemd5("${path.module}/../../src/glue/gold_job.py")
 }
 
-# Break tolerances: config, not code. Ops change a limit by editing config/gold_tolerances.csv
+# Business rules are config, not code: tolerances, approval limits, prime brokers, counterparty master
 resource "aws_s3_object" "gold_tolerances" {
   bucket      = local.artifacts_bucket
-  key         = "glue/config/gold_tolerances.csv"
+  key         = "glue/config/gold/gold_tolerances.csv"
   source      = "${path.module}/../../config/gold_tolerances.csv"
   source_hash = filemd5("${path.module}/../../config/gold_tolerances.csv")
+}
+
+resource "aws_s3_object" "gold_config" {
+  for_each    = toset(["margin_rules.csv", "prime_brokers.csv", "counterparties.csv"])
+  bucket      = local.artifacts_bucket
+  key         = "glue/config/gold/${each.value}"
+  source      = "${path.module}/../../config/${each.value}"
+  source_hash = filemd5("${path.module}/../../config/${each.value}")
 }
 
 resource "aws_s3_object" "gold_lib" {
@@ -89,7 +101,7 @@ resource "aws_iam_role_policy" "glue_gold_access" {
 # 4. The job ----------------------------------------------------------------------------------
 resource "aws_glue_job" "gold" {
   name              = "${local.name_prefix}-gold"
-  description       = "silver -> gold Iceberg: trade MTM reconciliation with tolerances (step 1), one business date per run"
+  description       = "silver -> gold Iceberg: trade reconciliation, margin call per agreement, star schema; one business date per run"
   role_arn          = aws_iam_role.glue_gold.arn
   glue_version      = "5.0"
   worker_type       = "G.1X"
@@ -115,7 +127,7 @@ resource "aws_glue_job" "gold" {
     "--gold_database"         = aws_glue_catalog_database.gold.name
     "--silver_path"           = "s3://${local.silver_bucket}"
     "--gold_path"             = "s3://${aws_s3_bucket.lake["gold"].bucket}"
-    "--tolerances_path"       = "s3://${local.artifacts_bucket}/${aws_s3_object.gold_tolerances.key}"
+    "--config_path"           = "s3://${local.artifacts_bucket}/glue/config/gold"
     "--summary_path"          = "s3://${local.artifacts_bucket}/runs/gold"
     "--extra-py-files"        = "s3://${local.artifacts_bucket}/${aws_s3_object.gold_lib.key}"
     "--datalake-formats"      = "iceberg"

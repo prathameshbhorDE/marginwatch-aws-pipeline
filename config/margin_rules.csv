@@ -1,0 +1,4 @@
+agreement_type,approval_limit_usd,note
+ISDA,2500000,client must approve a pay or recall of 2.5m or more
+GMRA,5000000,client must approve a pay or recall of 5m or more
+PB,,prime broker accounts: always inform client

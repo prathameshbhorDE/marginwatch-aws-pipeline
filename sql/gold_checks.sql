@@ -23,3 +23,23 @@ SELECT agreement_id, count(*) AS trades,
        round(sum(mtm_theirs_usd), 2) AS exposure_theirs_usd
 FROM fact_trade_mtm WHERE business_date = DATE '2026-10-26'
 GROUP BY 1 HAVING sum(CASE WHEN is_break THEN 1 ELSE 0 END) > 0;
+
+-- 5. The client's daily margin summary (what used to be the Excel at 13:00 Dublin)
+SELECT agreement_id, cpty_short_name, agreement_type, exposure_usd, total_requirement_usd,
+       collateral_post_haircut_usd, net_excess_deficit_usd, summary, action
+FROM fact_margin_call WHERE business_date = DATE '2026-10-26'
+ORDER BY CASE action WHEN 'Client approval required' THEN 1 WHEN 'Inform client' THEN 2 ELSE 3 END,
+         abs(net_excess_deficit_usd) DESC;
+
+-- 6. Calls in dispute: the counterparty's call differs from ours by at least the MTA
+SELECT agreement_id, net_excess_deficit_usd AS our_net, cpty_call_direction, cpty_call_amount_usd,
+       call_difference_usd, trade_breaks
+FROM fact_margin_call WHERE business_date = DATE '2026-10-26' AND call_agreed = false;
+
+-- 7. Star schema join: margin calls with counterparty country and the agreement version used
+SELECT c.country, count(*) AS agreements, round(sum(f.net_excess_deficit_usd), 2) AS net_usd
+FROM fact_margin_call f
+JOIN dim_counterparty c ON c.cpty_id = f.cpty_id
+JOIN dim_agreement a ON a.agreement_version_key = f.agreement_version_key
+WHERE f.business_date = DATE '2026-10-26'
+GROUP BY 1 ORDER BY abs(sum(f.net_excess_deficit_usd)) DESC LIMIT 10;

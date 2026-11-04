@@ -1,7 +1,8 @@
 """
-Bronze -> Silver -> Gold step 1 (trade reconciliation) on a laptop: fake S3 + local Spark, --mode parquet.
+Bronze -> Silver -> Gold on a laptop: fake S3 + local Spark, --mode parquet.
 
   RUN 1  default tolerances (5,000 USD and 5%)       -> 1 MTM break, 1 missing at cpty, 1 unknown at us
+         + margin call per agreement, compared cell by cell with the answer key
   RUN 2  a one-line override for GS INTL: 15,000 USD  -> GS INTL's 10,892 USD difference is now MATCHED
          (shows: limits are config, not code; most specific rule wins)
 
@@ -46,9 +47,9 @@ run("silver_job.py", "--business_date", D, "--bronze_path", f"{out}/bronze", "--
 print("Bronze and Silver built for", D)
 
 
-def gold(label, tolerances):
+def gold(label, config_dir):
     s = run("gold_job.py", "--business_date", D, "--silver_path", f"{out}/silver", "--gold_path", f"{out}/gold",
-            "--tolerances_path", tolerances, "--summary_path", f"{out}/runs")
+            "--config_path", config_dir, "--summary_path", f"{out}/runs")
     f = s["fact_trade_mtm"]
     print(f"\n{label}")
     print(f"  fact_trade_mtm rows={f['rows']}  (silver bank trades {f['silver_bank_trades']}, cpty trades {f['silver_cpty_trades']})")
@@ -57,14 +58,26 @@ def gold(label, tolerances):
     for b in s["breaks"]:
         print(f"  BREAK {b['agreement_id']} {b['trade_id']:12} {b['recon_status']:16} ours={b['mtm_ours_usd']} "
               f"theirs={b['mtm_theirs_usd']} diff={b['difference_usd']}")
+    m = s["fact_margin_call"]
+    print(f"  fact_margin_call rows={m['rows']}")
+    for k, v in m["by_summary_action"].items():
+        print(f"    {k:55} {v:4}")
+    for x in m["client_approval_required"]:
+        print(f"  APPROVAL {x['agreement_id']:22} {x['cpty_short_name']:14} net={x['net_excess_deficit_usd']:>14}  {x['summary']}")
+    for x in m["calls_not_agreed"]:
+        print(f"  CALL NOT AGREED {x['agreement_id']}: ours net={x['net_excess_deficit_usd']} theirs={x['cpty_call_direction']} "
+              f"{x['cpty_call_amount_usd']} diff={x['call_difference_usd']} trade breaks={x['trade_breaks']}")
     print(f"  checks: {s['dq']['checks']}, fail: {s['dq']['fail']}")
 
 
-gold("RUN 1 - default tolerances (5,000 USD and 5%)", os.path.join(ROOT, "config", "gold_tolerances.csv"))
+gold("RUN 1 - default tolerances (5,000 USD and 5%)", os.path.join(ROOT, "config"))
+print("\nCompare RUN 1 with the answer key:")
+subprocess.run([sys.executable, os.path.join(ROOT, "tests", "check_gold_vs_answer_key.py"), "--date", D,
+                "--local-gold-path", f"{out}/gold"], env=env)
 
-override = f"{out}/tolerances_override.csv"
-shutil.copy(os.path.join(ROOT, "config", "gold_tolerances.csv"), override)
-with open(override, "a") as f:
+override = f"{out}/config_override"
+shutil.copytree(os.path.join(ROOT, "config"), override)
+with open(f"{override}/gold_tolerances.csv", "a") as f:
     f.write("AGREEMENT,ORION-MF-CP001-ISDA,15000,0.05,example: bigger limit for one large client\n")
 gold("RUN 2 - one-line override: GS INTL ISDA limit 15,000 USD", override)
 

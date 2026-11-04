@@ -44,7 +44,7 @@ with a customer-managed KMS key.
 | Counterparty matching (MDM) | Maps name variants to one counterparty id; exact first, fuzzy only as a suggestion for review | `src/mdm/counterparty_matching.py` | 🟡 First version |
 | Silver (Iceberg) | Text → decimals and dates, counterparty MTM flipped to the fund's view, USD via FX, agreement keys, de-duplication (latest version wins), invalid ISINs flagged, SCD2 agreement history via Iceberg MERGE, ~59 data quality checks with a gate (any ERROR stops the pipeline) | `src/silver/`, `src/glue/silver_job.py`, `infra/terraform/glue_silver.tf`, `sql/silver_checks.sql` | ✅ Running on AWS |
 | Gold step 1: trade reconciliation | Our MTM vs the counterparty's per trade (full outer join): MATCHED / MTM_BREAK / MISSING_AT_CPTY / UNKNOWN_AT_US, tolerance 5,000 USD and 5% from a config file | `src/gold/gold_recon.py`, `src/glue/gold_job.py`, `config/gold_tolerances.csv`, `infra/terraform/glue_gold.tf` | ✅ Built, tested on local Spark |
-| Gold step 2: margin calculation + star schema (checked against the answer key) | | | ⏳ Next |
+| Gold step 2: margin call per agreement + star schema | Exposure, requirement, collateral, net excess/deficit, summary and action per agreement (terms point-in-time from SCD2), counterparty's own call and disputes; dim_counterparty, dim_agreement, dim_date. Checked cell by cell against the answer key | `src/gold/gold_margin.py`, `tests/check_gold_vs_answer_key.py`, `config/margin_rules.csv` | ✅ Built, matches the answer key on local Spark (274/274 rows) |
 | Step Functions orchestration | | | ⏳ Planned |
 | Power BI dashboard | | | ⏳ Planned |
 | CI/CD (GitHub Actions) | | | ⏳ Planned |
