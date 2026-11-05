@@ -1,7 +1,8 @@
 # MarginWatch — daily collateral margin pipeline on AWS
 
-> **Status: work in progress.** Ingestion and **Bronze** run on real AWS (Mumbai, `ap-south-1`), built with Terraform.
-> Silver, Gold, orchestration and the Power BI dashboard are **next**.
+> **Status:** the full pipeline runs end to end on real AWS (Mumbai, `ap-south-1`), built with Terraform and orchestrated by
+> Step Functions: ingestion → Bronze → Silver → Gold → daily report email. Gold matches the independent answer key on
+> **274/274 rows**. Power BI dashboard, CI/CD and an AI-drafted dispute email are in progress.
 > All data is synthetic: see [Data disclaimer](#data-disclaimer).
 
 ## The business problem
@@ -24,7 +25,9 @@ disputes. MarginWatch automates it as a data pipeline.
  Collateral Hub DB (PostgreSQL) ──┘   watermark CDC, bookmark in DynamoDB
                                              │
                                              ▼
-   Bronze (Glue PySpark → Parquet, Athena) ─► Silver (planned) ─► Gold star schema (planned) ─► Athena ─► Power BI (planned)
+   Bronze (Glue → Parquet) ─► Silver (Glue → Iceberg, SCD2, DQ gate) ─► Gold (Glue → Iceberg: recon, margin calls) ─► Athena ─► Power BI (planned)
+                                             │
+   Step Functions runs it all at 12:30 and 15:00 Dublin ─► HTML daily report (SES) · failure alerts (SNS)
 ```
 Ingestion is **event-driven** (every file is recorded as it lands); processing is **batch**
 (at the 12:30 Dublin cut-off, plus update runs for late files). Every lake bucket and secret is encrypted
@@ -42,9 +45,11 @@ with a customer-managed KMS key.
 | Agent bank REST pull | OAuth2 client credentials, cursor pagination, retry policy (429 / 5xx / 401), checksum verification, checkpointing | `src/ingestion/agent_bank_pull.py` | ✅ Built, tested against a mock bank API |
 | Credentials helper | Reads secrets at runtime, least-privilege IAM per job, 5-minute cache, redacted logging | `src/common/secret_store.py`, `src/lambdas/agent_bank_puller_handler.py`, `infra/iam/` | ✅ Built, tested on mocked AWS |
 | Counterparty matching (MDM) | Maps name variants to one counterparty id; exact first, fuzzy only as a suggestion for review | `src/mdm/counterparty_matching.py` | 🟡 First version |
-| Silver (clean, type, de-duplicate, data quality) | | | ⏳ Next |
-| Gold (star schema + margin calculation vs answer key) | | | ⏳ Planned |
-| Step Functions orchestration | | | ⏳ Planned |
+| Silver (Iceberg) | Text → decimals and dates, counterparty MTM flipped to the fund's view, USD via FX, agreement keys, de-duplication (latest version wins), invalid ISINs flagged, SCD2 agreement history via Iceberg MERGE, ~59 data quality checks with a gate (any ERROR stops the pipeline) | `src/silver/`, `src/glue/silver_job.py`, `infra/terraform/glue_silver.tf`, `sql/silver_checks.sql` | ✅ Running on AWS |
+| Gold step 1: trade reconciliation | Our MTM vs the counterparty's per trade (full outer join): MATCHED / MTM_BREAK / MISSING_AT_CPTY / UNKNOWN_AT_US, tolerance 5,000 USD and 5% from a config file | `src/gold/gold_recon.py`, `src/glue/gold_job.py`, `config/gold_tolerances.csv`, `infra/terraform/glue_gold.tf` | ✅ Running on AWS |
+| Gold step 2: margin call per agreement + star schema | Exposure, requirement, collateral, net excess/deficit, summary and action per agreement (terms point-in-time from SCD2), counterparty's own call and disputes; dim_counterparty, dim_agreement, dim_date. Checked cell by cell against the answer key | `src/gold/gold_margin.py`, `tests/check_gold_vs_answer_key.py`, `config/margin_rules.csv` | ✅ Running on AWS, matches the answer key (274/274 rows, 11/11 columns) |
+| Step Functions orchestration | 12:30 Dublin cut-off run and 15:00 update run for late files: cut-off check (Lambda) → gate on critical sources → Bronze → Silver (quality gate) → Gold → report (Lambda) → HTML email (SES); every failure → SNS alert. Operator re-run mode for any past day | `infra/terraform/orchestration.tf`, `infra/terraform/statemachine/daily_pipeline.asl.json`, `src/lambdas/run_report.py`, `scripts/run_pipeline.py` | ✅ Running on AWS |
+| AI dispute email drafts (Amazon Bedrock) | Draft dispute / client emails from Gold's facts; numbers inserted and re-checked from Gold; a person reviews and sends | | ⏳ Waiting for Bedrock account access |
 | Power BI dashboard | | | ⏳ Planned |
 | CI/CD (GitHub Actions) | | | ⏳ Planned |
 
@@ -69,25 +74,29 @@ No AWS account is needed for the demos: they use `moto`, a library that imitates
 ```bash
 cd infra/terraform && terraform init && terraform plan -out=plan.tfplan && terraform apply plan.tfplan
 cd ../.. && python src/ingestion/upload_to_landing.py --bucket <landing bucket> --date 2026-10-26
-AWS_PROFILE=<profile> python scripts/run_bronze_job.py --date 2026-10-26     # then sql/bronze_checks.sql in Athena
+AWS_PROFILE=<profile> python scripts/run_pipeline.py --date 2026-10-26 --skip-gate   # whole pipeline, step by step
+AWS_PROFILE=<profile> python tests/check_gold_vs_answer_key.py --date 2026-10-26         # Gold vs the answer key
+# single layers: scripts/run_bronze_job.py, run_silver_job.py, run_gold_job.py; checks: sql/*.sql in Athena
 ```
 
 ## Repository layout
 ```
-config/            counterparty master (200 legal entities), Bronze data contract
+config/            counterparty master (200 legal entities), Bronze data contract, break tolerances
 docs/              data contracts, design decisions, issues log, screenshots (docs/images)
-infra/terraform/   every AWS resource (S3, KMS, DynamoDB, Lambda, EventBridge, SNS, Glue, Athena)
+infra/terraform/   every AWS resource (S3, KMS, DynamoDB, Lambda, EventBridge, SNS, SES, Glue, Athena, Step Functions)
 infra/iam/         example least-privilege policy for the agent bank puller
 sample_data/       one generated business day (2026-10-26) + expected answer key
-scripts/           run the Bronze Glue job and print its summary
+scripts/           run the whole pipeline or a single Glue job and print the result
 sql/               Athena check queries
 src/bronze/        Bronze parsers (Excel/PDF/CSV) and row mapping
 src/collateral_hub/  Collateral Hub schema and loader (PostgreSQL)
+src/silver/        Silver transformations (types, USD, de-dup, SCD2)
+src/gold/          Gold reconciliation and margin logic
 src/common/        shared helpers (secrets)
 src/generators/    synthetic data
 src/glue/          Glue PySpark jobs
 src/ingestion/     S3 landing, agent bank REST pull, Collateral Hub watermark pull
-src/lambdas/       Lambda functions (file register, cut-off check, agent bank puller)
+src/lambdas/       Lambda functions (file register, cut-off check, run report, agent bank puller)
 src/mdm/           counterparty identity matching
 tests/             runnable demos against mocked AWS, a mock bank API, local Spark; AWS security check
 ```
@@ -109,3 +118,7 @@ holding and margin amount is randomly generated. No real client, fund or counter
 | 12:30 cut-off alert | INCOMPLETE (10 missing) before the late files, READY (10 late) after |
 | Bronze Glue job, one business day | 403 files → 9 tables, 0 quarantined, **188 s** on 2 × G.1X (includes start-up and library install) |
 | Athena on Bronze | count over all 9 tables: **6.40 KB scanned, 851 ms** |
+| Silver Glue job (Iceberg), one business date | 59 data quality checks: 56 pass, 3 expected warnings, 0 fail; **146–158 s** on 2 × G.1X |
+| Gold Glue job, one business date | 2,351 trades reconciled, exactly the 3 planted breaks found; 274 margin calls; **110–210 s** |
+| Gold vs answer key | **274/274 rows, 11/11 columns match** (exposure, IM, requirement, collateral, net, MTA, summary, action, …) |
+| Whole pipeline (Step Functions, one business date) | landing → Bronze → Silver → Gold → email in **540–639 s**; re-running a day gives identical results (idempotent) |
