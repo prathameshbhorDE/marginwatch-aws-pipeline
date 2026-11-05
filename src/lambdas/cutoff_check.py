@@ -90,7 +90,7 @@ def handler(event, context):
             lines.append(f"  ... and {len(missing) - 30} more")
     message = "\n".join(lines)
 
-    if TOPIC_ARN:
+    if TOPIC_ARN and (event or {}).get("notify", True):      # the 15:00 update run sends one combined email instead
         boto3.client("sns").publish(TopicArn=TOPIC_ARN, Subject=f"MarginWatch {business_date}: {summary['status']}",
                                     Message=message)
     print(message)

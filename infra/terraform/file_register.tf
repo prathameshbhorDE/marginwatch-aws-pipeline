@@ -174,11 +174,11 @@ resource "aws_iam_role" "scheduler" {
 }
 
 resource "aws_iam_role_policy" "scheduler_invoke" {
-  name = "invoke-cutoff-check"
+  name = "start-daily-pipeline" # was: invoke the cut-off Lambda directly; now the state machine calls it
   role = aws_iam_role.scheduler.id
   policy = jsonencode({
     Version   = "2012-10-17"
-    Statement = [{ Effect = "Allow", Action = "lambda:InvokeFunction", Resource = aws_lambda_function.cutoff_check.arn }]
+    Statement = [{ Effect = "Allow", Action = "states:StartExecution", Resource = aws_sfn_state_machine.daily.arn }]
   })
 }
 
@@ -190,7 +190,7 @@ resource "aws_scheduler_schedule" "cutoff" {
     mode = "OFF"
   }
   target {
-    arn      = aws_lambda_function.cutoff_check.arn
+    arn      = aws_sfn_state_machine.daily.arn # 12:30 Dublin -> whole pipeline (cut-off check is its first step)
     role_arn = aws_iam_role.scheduler.arn
     input    = jsonencode({})
   }

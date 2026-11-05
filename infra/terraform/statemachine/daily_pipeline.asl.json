@@ -1,0 +1,349 @@
+{
+  "Comment": "MarginWatch daily pipeline (12:30 cut-off run and 15:00 update run): cut-off check -> Bronze -> Silver -> Gold -> report email. Any failure -> alert email.",
+  "StartAt": "Run type given?",
+  "States": {
+    "Run type given?": {
+      "Type": "Choice",
+      "Comment": "12:30 schedule sends {}, 15:00 schedule sends run_type UPDATE_1500, a manual re-run sends MANUAL_RERUN",
+      "Choices": [
+        {
+          "Variable": "$.run_type",
+          "IsPresent": true,
+          "Next": "Manual re-run?"
+        }
+      ],
+      "Default": "Default run type"
+    },
+    "Default run type": {
+      "Type": "Pass",
+      "Result": "CUTOFF_1230",
+      "ResultPath": "$.run_type",
+      "Next": "Manual re-run?"
+    },
+    "Manual re-run?": {
+      "Type": "Choice",
+      "Comment": "An operator re-running an old day passes skip_cutoff_gate=true and a business_date",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.skip_cutoff_gate",
+              "IsPresent": true
+            },
+            {
+              "Variable": "$.skip_cutoff_gate",
+              "BooleanEquals": true
+            }
+          ],
+          "Next": "Use given business date"
+        }
+      ],
+      "Default": "Cut-off check"
+    },
+    "Use given business date": {
+      "Type": "Pass",
+      "Parameters": {
+        "business_date.$": "$.business_date",
+        "status": "SKIPPED (manual re-run)"
+      },
+      "ResultPath": "$.run",
+      "Next": "Bronze: files to Parquet"
+    },
+    "Cut-off check": {
+      "Type": "Task",
+      "Comment": "Existing Lambda: which files arrived for the day? Also sends the READY / INCOMPLETE email.",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${cutoff_check_arn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "business_date.$": "$.Payload.business_date",
+        "status.$": "$.Payload.status",
+        "agent_bank_files.$": "$.Payload.agent_bank_files",
+        "collateral_hub_extracts.$": "$.Payload.collateral_hub_extracts",
+        "mtm_missing.$": "$.Payload.mtm_missing"
+      },
+      "ResultPath": "$.run",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.TooManyRequestsException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Alert: pipeline failed"
+        }
+      ],
+      "Next": "Critical sources present?"
+    },
+    "Critical sources present?": {
+      "Type": "Choice",
+      "Comment": "Late counterparties do not stop the run (they show as NO_STATEMENT). Our own golden sources must be there.",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.run.agent_bank_files",
+              "NumericGreaterThanEquals": 2
+            },
+            {
+              "Variable": "$.run.collateral_hub_extracts",
+              "NumericGreaterThanEquals": 1
+            }
+          ],
+          "Next": "Bronze: files to Parquet"
+        }
+      ],
+      "Default": "Alert: sources missing"
+    },
+    "Bronze: files to Parquet": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${bronze_job}",
+        "Arguments": {
+          "--business_date.$": "$.run.business_date"
+        }
+      },
+      "ResultSelector": {
+        "state.$": "$.JobRunState",
+        "seconds.$": "$.ExecutionTime",
+        "run_id.$": "$.Id"
+      },
+      "ResultPath": "$.bronze",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Glue.ConcurrentRunsExceededException",
+            "Glue.ThrottlingException"
+          ],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Alert: pipeline failed"
+        }
+      ],
+      "Next": "Silver: clean + quality gate"
+    },
+    "Silver: clean + quality gate": {
+      "Type": "Task",
+      "Comment": "Fails on purpose if a data quality check fails: Gold must never run on bad data",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${silver_job}",
+        "Arguments": {
+          "--business_date.$": "$.run.business_date"
+        }
+      },
+      "ResultSelector": {
+        "state.$": "$.JobRunState",
+        "seconds.$": "$.ExecutionTime",
+        "run_id.$": "$.Id"
+      },
+      "ResultPath": "$.silver",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Glue.ConcurrentRunsExceededException",
+            "Glue.ThrottlingException"
+          ],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Alert: pipeline failed"
+        }
+      ],
+      "Next": "Gold: recon + margin calls"
+    },
+    "Gold: recon + margin calls": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${gold_job}",
+        "Arguments": {
+          "--business_date.$": "$.run.business_date"
+        }
+      },
+      "ResultSelector": {
+        "state.$": "$.JobRunState",
+        "seconds.$": "$.ExecutionTime",
+        "run_id.$": "$.Id"
+      },
+      "ResultPath": "$.gold",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Glue.ConcurrentRunsExceededException",
+            "Glue.ThrottlingException"
+          ],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Alert: pipeline failed"
+        }
+      ],
+      "Next": "Build daily report"
+    },
+    "Build daily report": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${run_report_arn}",
+        "Payload": {
+          "business_date.$": "$.run.business_date",
+          "seconds": {
+            "bronze.$": "$.bronze.seconds",
+            "silver.$": "$.silver.seconds",
+            "gold.$": "$.gold.seconds"
+          },
+          "run_type.$": "$.run_type"
+        }
+      },
+      "ResultSelector": {
+        "subject.$": "$.Payload.subject",
+        "message.$": "$.Payload.message",
+        "html.$": "$.Payload.html"
+      },
+      "ResultPath": "$.report",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.TooManyRequestsException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Alert: pipeline failed"
+        }
+      ],
+      "Next": "Email: daily report (SES)"
+    },
+    "Email: daily report (SES)": {
+      "Type": "Task",
+      "Comment": "Formatted HTML report via Amazon SES. SNS stays for alerts (failures, missing sources).",
+      "Resource": "arn:aws:states:::aws-sdk:sesv2:sendEmail",
+      "Parameters": {
+        "FromEmailAddress": "${report_email}",
+        "Destination": {
+          "ToAddresses": [
+            "${report_email}"
+          ]
+        },
+        "Content": {
+          "Simple": {
+            "Subject": {
+              "Data.$": "$.report.subject"
+            },
+            "Body": {
+              "Html": {
+                "Data.$": "$.report.html"
+              },
+              "Text": {
+                "Data.$": "$.report.message"
+              }
+            }
+          }
+        }
+      },
+      "ResultPath": null,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "SesV2.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Alert: pipeline failed"
+        }
+      ],
+      "End": true
+    },
+    "Alert: sources missing": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${topic_arn}",
+        "Subject": "MarginWatch pipeline STOPPED: critical source files missing",
+        "Message.$": "States.Format('Business date {}: the pipeline did not start. Agent bank files: {} (need 2), Collateral Hub extracts: {} (need 1). Land the missing files, then re-run', $.run.business_date, $.run.agent_bank_files, $.run.collateral_hub_extracts)"
+      },
+      "ResultPath": null,
+      "Next": "Stopped: sources missing"
+    },
+    "Stopped: sources missing": {
+      "Type": "Fail",
+      "Error": "SourcesMissing",
+      "Cause": "Agent bank or Collateral Hub files not in landing"
+    },
+    "Alert: pipeline failed": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "${topic_arn}",
+        "Subject": "MarginWatch pipeline FAILED",
+        "Message.$": "States.Format('A step of the MarginWatch daily pipeline failed, later steps did not run. ERROR: {} --- CAUSE: {} --- STATE WHEN IT FAILED: {}', $.error.Error, $.error.Cause, States.JsonToString($))"
+      },
+      "ResultPath": null,
+      "Next": "Failed"
+    },
+    "Failed": {
+      "Type": "Fail",
+      "Error": "PipelineFailed",
+      "Cause": "See the alert email and the execution history"
+    }
+  }
+}
